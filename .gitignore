@@ -1,5 +1,10 @@
 .env
+.env.test
 *.env.local
+n8n/credentials-overwrite.json
+.pytest_cache/
+.n8n-e2e/
+tests/.cache/
 bot.db
 *.db
 *.db-journal

@@ -1,3 +1,5 @@
+import json
+
 import aiohttp
 import redis.asyncio as aioredis
 from aiogram import Bot, Dispatcher, types
@@ -14,12 +16,39 @@ class TelegramBot:
     def __init__(self, settings: Settings, db: DatabaseManager, redis: aioredis.Redis):
         self.settings = settings
         self.db = db
+        self.redis = redis
         self.bot = Bot(token=settings.TELEGRAM_GROUP_BOT_TOKEN)
         self.dp = Dispatcher()
         self.n8n_client = N8NClient(settings, redis)
-        
+
         self._register_handlers()
-    
+
+    async def _record_test_outbox(
+        self,
+        *,
+        kind: str,
+        dialog_id: str,
+        chat_id: str,
+        file_type: str | None,
+        text: str,
+        message_id: int | None = None,
+        topic_id: int | None = None,
+    ) -> None:
+        if not self.settings.TEST_MODE:
+            return
+        payload = {
+            "kind": kind,
+            "dialog_id": str(dialog_id),
+            "chat_id": str(chat_id),
+            "file_type": file_type or "text",
+            "text": text or "",
+            "message_id": message_id,
+            "topic_id": topic_id,
+        }
+        await self.redis.lpush(
+            self.settings.redis_test_outbox_list,
+            json.dumps(payload, ensure_ascii=False),
+        )    
     def _register_handlers(self):
         """Регистрация обработчиков"""
         
@@ -281,13 +310,16 @@ class TelegramBot:
                 reply_markup=keyboard
             )
 
-            is_tg_url = file_id and "api.telegram.org/file/bot" in file_id
-            print(f"📎 File: {'tg-url' if is_tg_url else ('url' if file_id and file_id.startswith('http') else 'file_id')} type={file_type}")
+            is_http_url = bool(file_id) and str(file_id).startswith(("http://", "https://"))
+            print(
+                f"📎 File: {'url' if is_http_url else 'file_id'} type={file_type}"
+            )
 
-            input_file = await self._resolve_file(file_id, file_type) if is_tg_url else file_id
+            input_file = await self._resolve_file(file_id, file_type) if is_http_url else file_id
+            sent = None
 
             if file_type == "text" or not file_id:
-                await self.bot.send_message(
+                sent = await self.bot.send_message(
                     chat_id=self.settings.TELEGRAM_GROUP_ID,
                     message_thread_id=topic_id,
                     text=f"👤 Пользователь: {message}",
@@ -295,15 +327,15 @@ class TelegramBot:
                     reply_markup=keyboard
                 )
             elif file_type == "photo":
-                await self.bot.send_photo(photo=input_file, **kwargs)
+                sent = await self.bot.send_photo(photo=input_file, **kwargs)
             elif file_type == "video":
-                await self.bot.send_video(video=input_file, **kwargs)
+                sent = await self.bot.send_video(video=input_file, **kwargs)
             elif file_type == "audio":
-                await self.bot.send_audio(audio=input_file, **kwargs)
+                sent = await self.bot.send_audio(audio=input_file, **kwargs)
             elif file_type == "voice":
-                await self.bot.send_voice(voice=input_file, **kwargs)
+                sent = await self.bot.send_voice(voice=input_file, **kwargs)
             elif file_type == "sticker":
-                await self.bot.send_sticker(
+                sent = await self.bot.send_sticker(
                     chat_id=self.settings.TELEGRAM_GROUP_ID,
                     message_thread_id=topic_id,
                     sticker=input_file
@@ -316,14 +348,23 @@ class TelegramBot:
                         parse_mode=ParseMode.HTML
                     )
             else:
-                await self.bot.send_document(document=input_file, **kwargs)
+                sent = await self.bot.send_document(document=input_file, **kwargs)
 
+            await self._record_test_outbox(
+                kind="user_message",
+                dialog_id=dialog_id,
+                chat_id=chat_id,
+                file_type=file_type or "text",
+                text=message or "",
+                message_id=getattr(sent, "message_id", None),
+                topic_id=topic_id,
+            )
             return True
 
         except Exception as e:
             print(f"❌ Error sending user message: {e}")
             return False
-    
+
     async def send_ai_response(self, dialog_id: str, chat_id: str, message: str) -> bool:
         """Отправить ответ AI с кнопкой переключения"""
         try:
@@ -339,8 +380,8 @@ class TelegramBot:
                     callback_data=f"toggle_ai:{dialog_id}:{chat_id}"
                 )]
             ])
-            
-            await self.bot.send_message(
+
+            sent = await self.bot.send_message(
                 chat_id=self.settings.TELEGRAM_GROUP_ID,
                 message_thread_id=topic_id,
                 text=f"🤖 AI: {message}",
@@ -348,6 +389,15 @@ class TelegramBot:
                 reply_markup=keyboard
             )
 
+            await self._record_test_outbox(
+                kind="ai_response",
+                dialog_id=dialog_id,
+                chat_id=chat_id,
+                file_type="text",
+                text=message or "",
+                message_id=getattr(sent, "message_id", None),
+                topic_id=topic_id,
+            )
             print(f"✅ AI response sent to topic {topic_id} (dialog_id: {dialog_id})")
             return True
 

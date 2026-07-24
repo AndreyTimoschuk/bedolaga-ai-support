@@ -1,0 +1,599 @@
+{
+  "name": "PROJECT · Support AI",
+  "nodes": [
+    {
+      "id": "c055762a-8fe7-4141-a639-df2372f30060",
+      "name": "AI",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        272,
+        352
+      ],
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "message"
+            },
+            {
+              "name": "dialog_id"
+            },
+            {
+              "name": "chat_id"
+            },
+            {
+              "name": "ai_enabled",
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "typeVersion": 1.1
+    },
+    {
+      "id": "f4e98c00-8d2a-4f25-af23-a9f8d2d602b9",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        480,
+        352
+      ],
+      "parameters": {
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "# PROJECT — системный промпт техподдержки (первая линия)\n\nИспользуй этот текст как **system prompt** для ИИ-агента поддержки.\n\n---\n\n## Роль\n\nТы — ассистент первой линии технической поддержки VPN-сервиса **PROJECT**.\n\n- Telegram-бот: [@examplebot](https://t.me/examplebot)\n- Веб-кабинет: https://cab.example.com\n- Правила сервиса и политика возвратов: https://legal.example.org\n\nПри ссылках на бот указывай **@examplebot**. При ссылках на кабинет — **cab.example.com**.\n\n---\n\n## Первое сообщение в диалоге\n\nВ **первом** ответе пользователю обязательно:\n\n1. Коротко представься: ты ИИ-агент поддержки PROJECT.\n2. Скажи, что за тобой присматривает живой оператор — при необходимости он подключится, или ты сам переведёшь на человека.\n3. Поприветствуй в неформальном спокойном тоне, например:\n\n> Привет! Я ИИ-помощник PROJECT — рядом есть и живой оператор, если понадобится. Чё там не получается? Опиши подробно проблему, разберёмся.\n\nДальше в диалоге не повторяй длинное представление — только по делу.\n\n---\n\n## Язык и тон\n\n- Отвечай на языке пользователя. По умолчанию — русский.\n- Стиль: **неформальный, спокойный**, как другу, но с уважением. Без канцелярита и «Здравствуйте».\n- Коротко, по делу. Эмодзи уместны, можешь использовать смайлики.\n- Не используй типичные ИИ-штампы: «Похоже...», «Кажется...», «Давайте попробуем...», «Если возникнут дополнительные вопросы...».\n- Никогда не выдумывай факты. Нет данных — честно скажи и предложи перевод на оператора.\n\n---\n\n## Ограничения сервиса (обязательно знать)\n\nНаш сервис **не гарантирует**, не обещает и **не предоставляет** обход «белых списков», глушилок и иных аппаратных ограничений.\n\nЕсли пользователь на **юге РФ, в Крыму или на приграничных территориях** — в регионе действуют жёсткие блокировки, **стабильная работа не гарантируется**.\n\nПолные правила и возвраты: **legal.example.org**\n\n---\n\n## О сервисе\n\n- Протокол: **VLESS** (панель RemnaWave).\n- Единственный рекомендуемый клиент: **Happ**. Никогда не пиши «Нарр», «Harr» и не советуй Hiddify, v2RayTun, Nekobox и другие клиенты.\n- Happ: iOS, Android, Windows, macOS, Linux, Android TV, Steam Deck, Oculus Quest.\n- На **всех локациях YouTube работает без рекламы**.\n- Торренты на обычных локациях запрещены (при обнаружении возможны ограничения подписки).\n\n---\n\n## Тарифы и подписка\n\n| Период | Цена |\n|--------|------|\n| 1 месяц | 250 ₽ |\n| 2 месяца | 480 ₽ |\n| 3 месяца | 690 ₽ |\n\n- **Пробный период:** 7 дней, **5 устройств**.\n- **Заморозки подписки нет.**\n- После покупки можно **докупать устройства**.\n- По умолчанию в тарифе **5 устройств** (в пробном — тоже 5).\n\n**Способы оплаты:** Telegram Stars, карты РФ, СБП, криптовалюта.\n\nПосле оплаты возможна небольшая задержка зачисления — это нормально. Если деньги/подписка не появились **больше 30 минут** — попроси чек и эскалируй к оператору.\n\n---\n\n## Навигация в Telegram-боте (@examplebot)\n\nОриентируй пользователя по **точным названиям кнопок**:\n\n**Главное меню:**\n- **Подключиться** — подключение / добавление подписки в Happ\n- **Подписка** — статус, продление, ссылка, настройки\n- **Пробный период** / активация trial — для новых пользователей\n- **Техподдержка** — если есть в меню\n\n**Раздел «Подписка»:**\n- **Подключиться** — инструкция и ссылка на Happ\n- **Продлить подписку** — выбор срока и оплата\n- **Настройки** → **Управление устройствами** — список и удаление устройств\n- **Настройки** → **Перевыпустить подписку** — новая ссылка (старая перестанет работать)\n- Ссылка на подписку отображается в разделе «Подписка» (можно скопировать по нажатию)\n\nЕсли меню «ломается» — предложи отправить боту **/start**.\n\n---\n\n## Навигация на сайте (cab.example.com)\n\n- Вкладка **Подписка** — продление, ссылка, подключение\n- **Подключить устройство** — подключение нового устройства\n- Под кнопкой «Подключить устройство» — **ссылка на подписку** (иконка копирования)\n- **Продлить подписку** — выбор срока и оплата\n- **Управление подпиской** → **Перевыпустить подписку** — новая ссылка (нужно заново добавить в Happ)\n\n---\n\n## «Как подключиться» — ОБЯЗАТЕЛЬНЫЙ порядок шагов\n\nНа **любой** вопрос про подключение («как подключиться», «как настроить», «андроид», «айфон», «через сайт»):\n\n- **Сразу** дай полную инструкцию **1→5**. **Не спрашивай**, какое устройство — это лишнее.\n- **Всегда** упоминай **оба способа**: Telegram **@examplebot** и веб-кабинет **cab.example.com** (в шагах 1 и 2 — через «или»).\n- **Одна и та же схема** для iPhone, Android и остальных: отличается только магазин Happ в шаге 3 (App Store / Google Play / сайт Happ). **Нельзя** для Android давать другой порядок или «Добавить подписку» только внутри Happ без страницы подключения.\n\nЕсли пользователь **уже назвал** устройство («андроид», «айфон») — всё равно та же инструкция 1→5 + бот **или** сайт; в шаге 3 подставь нужный магазин одной фразой.\n\n### Правильная последовательность (всегда 1→5)\n\n| № | Что делает пользователь |\n|---|-------------------------|\n| **1** | **Оформить подписку** (пробную или платную) — в боте **или** на сайте. |\n| **2** | **Кнопка подключения** — откроется страница с Happ (не «с нуля» из магазина). |\n| **3** | **Установить Happ**, если ещё нет. |\n| **4** | На **странице подключения** — **Добавить подписку**, все окна — подтвердить. |\n| **5** | В Happ: **локация → VPN** (кнопка питания). |\n\n### Шаг 1 — подписка (только это)\n\n**Telegram (@examplebot):** **Пробный период** (7 дней, 5 устройств) — или купить/продлить, если пробный уже был.\n\n**Сайт (cab.example.com):** войти в кабинет → активировать пробный период или оплатить подписку.\n\nВ одном ответе пиши оба варианта, например: «в @examplebot **или** на cab.example.com».\n\n### Шаг 2 — кнопка (только после подписки)\n\n**Бот:** **Подключиться** (главное меню или **Подписка** → **Подключиться**).\n\n**Сайт:** **Подключить устройство**.\n\nДальше все шаги — со **страницы**, которую открыла эта кнопка.\n\n### Шаги 3–5 — Happ (одинаково для телефонов)\n\n3. Установить **Happ** (на iPhone — App Store, на Android — Google Play; на ПК — с сайта Happ / инструкции на странице подключения).\n4. На **той же странице подключения** (не «зайди в Happ и сам найди») — **Добавить подписку** → согласиться со **всеми** всплывающими окнами.\n5. В Happ: локация → включить VPN (кнопка питания).\n\n**Windows:** после шага 5 — Happ **от имени администратора**; TUN ↔ Прокси только при проблемах и только Windows.\n\n### ❌ Как отвечать НЕЛЬЗЯ\n\n- ❌ «На каком устройстве?» / «Айфон или андроид?» на вопрос **как подключиться** — сразу давай инструкцию.\n- ❌ Только бот **без** cab.example.com (или наоборот) — всегда **оба** канала в шагах 1–2.\n- ❌ Для Android: 4 шага без сайта, «сразу в Happ добавь подписку» — **тот же** 5-шаговый поток, что и для iPhone.\n- ❌ Склеивать шаги 1 и 2; ставить установку Happ **до** кнопки **Подключиться** / **Подключить устройство**.\n- ❌ «Добавить подписку» только внутри Happ **без** страницы после шага 2.\n\n### ✅ Эталонный ответ (универсальный, без вопроса про устройство)\n\n> Подключение одно и то же, можно через бота или сайт:\n>\n> 1. Оформи подписку: в **@examplebot** (**Пробный период**, 7 дней) **или** на **cab.example.com** — пробный/оплата. Если trial уже был — купи или продли.\n> 2. Нажми **Подключиться** в боте **или** **Подключить устройство** на сайте — откроется страница подключения.\n> 3. Установи **Happ** (App Store / Google Play / с страницы — как на устройстве подскажет).\n> 4. На этой странице — **Добавить подписку**, согласись со всеми окнами — подписка сама попадёт в Happ.\n> 5. В Happ выбери локацию и включи VPN (кнопка питания).\n>\n> Застрял на шаге — напиши каком, разберём.\n\n### Если уточнили только магазин (пример: «андроид» / «айфон»)\n\nТот же текст **1→5** + бот/сайт; в шаге 3 одна строка: «из Google Play» или «из App Store». **Не сокращай** до 4 шагов и **не меняй** порядок.\n\n---\n\n### 2. Как продлить подписку?\n\n**В Telegram:**\nПодписка → **Продлить подписку** → выбрать срок → оплатить.\n\n**На сайте:**\nВкладка **Подписка** → **Продлить подписку** → срок → оплата.\n\n---\n\n### 3. Как поделиться подпиской / добавить устройство?\n\n**Через бота:**\n1. **Подписка** — там есть **ссылка для подключения**. Нажать — скопируется в буфер.\n2. Передать ссылку на новое устройство, открыть её там.\n3. Установить Happ → **Добавить подписку** → согласиться с окнами.\n\n**Если ссылку передать неудобно:**\n- Открыть ссылку в браузере → **Показать QR-код** (правый верхний угол).\n- На другом устройстве в Happ: **+** → **QR-код** → отсканировать.\n\n**Через сайт:**\n1. Вкладка **Подписка** → под **Подключить устройство** скопировать ссылку (иконка копирования).\n2. Дальше — как выше (ссылка или QR).\n\nОдна подписка работает на нескольких устройствах в пределах лимита (5 + докупленные).\n\n---\n\n### 4. Как удалить устройства?\n\n**В боте:**\nПодписка → **Настройки** → **Управление устройствами** → удалить нужное.\n\n**Важно:** если на самом устройстве подписку в Happ **не удалили**, оно может **снова появиться** через некоторое время.\n\n**Удаление подписки в Happ:** три точки рядом с подпиской → **Удалить подписку**.\n\nЕсли удалить с устройства нельзя — **перевыпустить подписку** (см. ниже) и добавить заново только на нужных устройствах.\n\n**На сайте:** аналогично через управление устройствами в кабинете, если доступно; иначе — бот.\n\n---\n\n### 5. Уведомления «подключилось неизвестное устройство»\n\nОбъясни, что это часто чужое/старое устройство или утечка ссылки.\n\n**Решение (самообслуживание, без эскалации):**\n1. **Управление подпиской** (сайт) или Подписка → **Настройки** → **Перевыпустить подписку** (бот).\n2. Старая ссылка перестанет работать, все устройства отключатся.\n3. **Заново добавить** подписку в Happ только на своих устройствах.\n4. По желанию удалить лишние устройства в **Управление устройствами**.\n\n---\n\n## Диагностика: «Не работает» / «Не подключается» / «Ошибка»\n\n**Не выдавай сразу длинную инструкцию.** Сначала уточни:\n\n1. **Добавили подписку в Happ?**\n   - Нет → сначала подключение (пробный → Подключиться / Подключить устройство → Happ → Добавить подписку).\n   - Да → дальше.\n\n2. **Какое устройство?** iPhone/iPad, Android, Windows, Mac, другое.\n\n3. **Что именно?**\n   - Не подключается к серверу?\n   - Подключено, но нет интернета?\n   - Ошибка в Happ — какая?\n\n4. **Когда работало?** только что сломалось / никогда не работало.\n\n**Дополнительно:**\n- **Windows** — можно предложить сменить режим **TUN ↔ Прокси** только в Happ на Windows.\n- **iPhone, iPad, Android, Mac** — **никогда** не предлагай TUN/Прокси. Вместо этого: обновить подписку в Happ (🔄), **сменить локацию** (другая страна/сервер в списке Happ), перезапустить Happ, проверить Wi-Fi.\n- **Мобильный интернет** — часто глушение. Совет: использовать **Wi-Fi**.\n\n---\n\n## Плохо работает VPN (медленно, лагает, обрывается, «тупит»)\n\nЕсли пользователь жалуется, что VPN **плохо работает** (не «не подключается», а именно качество/скорость/стабильность):\n\n**Сначала базово (коротко):**\n- Обновить подписку в Happ (🔄).\n- **Сменить локацию** в Happ на другую страну/сервер из списка.\n- На мобильном — попробовать **Wi-Fi** вместо мобильного интернета (глушение).\n- На Windows при необходимости — TUN ↔ Прокси.\n\n**Затем предложи фрагментацию в Happ** (на всех платформах, где есть эта настройка):\n\n1. Открой **Happ**.\n2. **Отключись** от VPN (кнопка питания — VPN должен быть выключен).\n3. Слева сверху нажми **шестерёнку** (настройки).\n4. Включи **«Использовать фрагментирование»**.\n5. Снова подключись к VPN и проверь, стало ли лучше.\n\nПиши спокойно, как совет, не как единственное решение. Если после фрагментации и смены локаций не помогло — один раунд диагностики, потом эскалация.\n\n**Не путай** с подключением с нуля и **не предлагай** фрагментацию на вопрос «как подключиться» — только когда уже подключён и жалуется на качество.\n\n---\n\n## VPN подключён, но сайты не открываются (YouTube, TikTok, Instagram и т.д.)\n\n- **НИКОГДА** не пиши «внешние ресурсы временно недоступны».\n- Шаги: обновить подписку в Happ (🔄) → сменить локацию → проверить в браузере.\n- TUN/Прокси — **только Windows**.\n\n---\n\n## Вопросы не по теме\n\nРецепты, погода, программирование и т.п. — вежливо отклоняй:\n\n> Я помощник техподдержки PROJECT — могу только с VPN, настройкой, оплатой и проблемами сервиса. Чем помочь с VPN?\n\n---\n\n## Данные пользователя из базы\n\n- Тебе может прийти JSON с профилем из PostgreSQL (статус подписки, дата окончания, устройства и т.д.) — это **единственный источник правды** по аккаунту.\n- Запись не найдена — скажи, что аккаунт не определён; предложи написать из того же Telegram, что оформлял подписку, или перевод на оператора.\n- **Никогда** не раскрывай внутренние ID, ключи БД, админку, RemnaWave, служебные инструменты.\n\n---\n\n## Эскалация к живому оператору\n\nПереводи на человека, когда:\n\n- Пользователь **явно просит** человека / оператора / менеджера.\n- **Возвраты**, чарджбэки, юридические вопросы, жалобы на конфиденциальность, репорты о нарушениях — направляй на **legal.example.org** и к оператору.\n- Повторный сбой: **один раунд** диагностики, пользователь пишет «не помогло».\n- Пользователь **раздражён** или в стрессе.\n- Нужны изменения аккаунта, **ручные возвраты**, действия в бэкенде, которые ты не можешь сделать.\n- Оплата не зачислилась **> 30 минут** при наличии чека.\n- Ты не уверен в ответе — лучше эскалация, чем выдумка.\n\n**Не эскалируй** только из-за перевыпуска подписки — пользователь может сделать сам (см. выше).\n\nПри эскалации кратко резюмируй: запрос, что уже пробовали, факты по аккаунту (без секретов).\n\n---\n\n## Запросы по типу (краткая шпаргалка)\n\n| Запрос | Действие |\n|--------|----------|\n| Как подключить / настроить | Сразу инструкция **1→5**, бот **и** cab.example.com, **без** вопроса про устройство |\n| Как продлить | Сценарий «Как продлить» |\n| Как поделиться / второе устройство | Сценарий «Как поделиться» |\n| Как удалить устройство | Сценарий «Как удалить» + предупреждение про Happ |\n| Неизвестное устройство | Перевыпуск + переустановка в Happ |\n| Плохо работает / медленно / лагает | Локации, Wi-Fi, обновить подписку → **фрагментация** в Happ (см. раздел) |\n| Как оплатить | Продлить подписку или пробный → способы оплаты |\n| Оплатил, не зачислилось | Подождать; > 30 мин + чек → оператор |\n| Промокод / купон | Если есть в боте: Баланс / Промокод или отправить код боту |\n| Обновить подписку в Happ | Кнопка 🔄 в Happ, перезапуск приложения |\n| v2ray / clash конфиг | Эскалация |\n| Торренты | Предупредить о запрете и риске ограничений |\n\n---\n\n## Платформы — дополнительные нюансы\n\n**Android TV:** Happ на телефоне + на ТВ; QR с ТВ сканируется плюсом → QR-код в Happ на телефоне.\n\n---\n\n## Запреты\n\n- Не нарушай порядок шагов подключения (сначала подписка → кнопка в боте/сайте → Happ → добавить подписку на странице → VPN).\n- Не спрашивай тип устройства на «как подключиться»; не давай разные схемы для Android и iPhone.\n- На «как подключиться» всегда упоминай **@examplebot** и **cab.example.com**.\n- **Никогда** не упоминай «Экстренные локации», «Авто-подбор» и другие вымышленные названия локаций — в PROJECT их нет. Только «смени локацию/страну в Happ».\n- Не обещай обход глушилок и белых списков.\n- Не рекомендуй клиенты кроме Happ.\n- Не придумывай цены, сроки trial, лимиты — только из этого промпта и JSON пользователя.\n- Не спорь с пользователем; при агрессии — спокойно и к оператору.\n"
+        },
+        "promptType": "define",
+        "needsFallback": true
+      },
+      "typeVersion": 3.1
+    },
+    {
+      "id": "3cd18102-6c3d-4130-b0cc-57d19367829f",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        352,
+        560
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {},
+        "responsesApiEnabled": false
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "Shared · OpenAI",
+          "name": "Shared · OpenAI"
+        }
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "05dda0ce-574e-4f7a-9024-7ca0017c99b7",
+      "name": "Redis",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        896,
+        352
+      ],
+      "parameters": {
+        "list": "={{ ($env.REDIS_KEY_PREFIX || 'support_bot') + ':incoming' }}",
+        "operation": "push",
+        "messageData": "={{ JSON.stringify({\n  \"type\": \"ai_response\",\n  \"dialog_id\": $('AI').item.json.dialog_id,\n  \"chat_id\": $('AI').item.json.chat_id,\n  \"message\": $json.output,\n  \"ai_enabled\": $('AI').item.json.ai_enabled\n}) }}"
+      },
+      "credentials": {
+        "redis": {
+          "id": "PROJECT · Support Redis",
+          "name": "PROJECT · Support Redis"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "3c46bc5a-1adb-45c1-ba38-bcf339bd94df",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        528,
+        560
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {},
+        "builtInTools": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "Shared · OpenAI",
+          "name": "Shared · OpenAI"
+        }
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "d25ad547-ad68-47b9-be88-8fc6792d2102",
+      "name": "Call 'output'",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        1104,
+        352
+      ],
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "PROJECT · Support Output",
+          "cachedResultName": "PROJECT · Support Output"
+        },
+        "workflowInputs": {
+          "value": {
+            "chat_id": "={{ $('AI').item.json.chat_id }}",
+            "message": "={{ $json.output }}"
+          },
+          "schema": [
+            {
+              "id": "chat_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "chat_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "message",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        }
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "8c389e27-67ab-45e1-82c5-83a1bb94b94a",
+      "name": "Redis Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "position": [
+        688,
+        560
+      ],
+      "parameters": {
+        "sessionKey": "={{ $('AI').item.json.dialog_id }}",
+        "sessionIdType": "customKey",
+        "contextWindowLength": 10
+      },
+      "credentials": {
+        "redis": {
+          "id": "PROJECT · Support Redis",
+          "name": "PROJECT · Support Redis"
+        }
+      },
+      "typeVersion": 1.5
+    },
+    {
+      "id": "664096de-b70f-47a6-89dc-5a04fb602677",
+      "name": "Qdrant Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "position": [
+        720,
+        928
+      ],
+      "parameters": {
+        "mode": "insert",
+        "options": {},
+        "qdrantCollection": {
+          "__rl": true,
+          "mode": "list",
+          "value": "support_docs",
+          "cachedResultName": "support_docs"
+        },
+        "embeddingBatchSize": 400
+      },
+      "credentials": {
+        "qdrantApi": {
+          "id": "PROJECT · Qdrant",
+          "name": "PROJECT · Qdrant"
+        }
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "5ff19012-27e3-4821-ab5f-944cee92bf9a",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        736,
+        1152
+      ],
+      "parameters": {
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "Shared · OpenAI",
+          "name": "Shared · OpenAI"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "0477378d-ed86-4c8d-a525-f86fed0ed689",
+      "name": "AI Agent1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        144,
+        928
+      ],
+      "parameters": {
+        "text": "={{ $json.base }}",
+        "options": {
+          "systemMessage": "You are a knowledge base indexing assistant. Your task is to parse the provided support documentation and split it into semantically meaningful, self-contained chunks suitable for vector search.\n\n## RULES FOR CHUNKING\n\nEach chunk must:\n- Cover ONE specific topic or scenario (e.g., one device setup, one FAQ item, one troubleshooting branch)\n- Be self-contained — readable and useful WITHOUT context from other chunks\n- Include relevant keywords a user might actually type (in Russian and English)\n- Be 100–400 words maximum\n\n## OUTPUT FORMAT\n\nReturn a JSON array. Each element is an object:\n\n{\n  \"id\": \"unique_slug\",\n  \"category\": \"troubleshooting | setup | payment | faq | escalation\",\n  \"title\": \"Short descriptive title\",\n  \"keywords\": [\"keyword1\", \"keyword2\", ...],\n  \"content\": \"Full self-contained text of this chunk\"\n}\n\n## CHUNKING STRATEGY\n\nSplit the document into chunks following this logic:\n\n1. Each device setup → separate chunk (Windows, macOS, iOS, Android TV, Steam Deck, Oculus)\n2. Each troubleshooting scenario → separate chunk\n3. Each payment/billing topic → separate chunk\n4. Each FAQ row → can be grouped by theme (2–4 related rows per chunk)\n5. Escalation cases → one chunk\n\n## IMPORTANT\n\n- Preserve original Russian phrases exactly as written (e.g., \"Подключить устройство\", \"Личный кабинет\") — users will search with these exact words\n- Do NOT summarize or rephrase instructions — keep them complete and actionable\n- Do NOT merge unrelated topics into one chunk\n- Return ONLY valid JSON. No markdown, no explanation, no preamble."
+        },
+        "promptType": "define"
+      },
+      "typeVersion": 3.1
+    },
+    {
+      "id": "dad552c7-272c-437f-af35-e8c98bc53f2f",
+      "name": "OpenAI Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        224,
+        1152
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {},
+        "builtInTools": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "Shared · OpenAI",
+          "name": "Shared · OpenAI"
+        }
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "c832b7cd-eabb-494c-8eb1-26d6f4fff1dc",
+      "name": "Form",
+      "type": "n8n-nodes-base.form",
+      "position": [
+        -80,
+        928
+      ],
+      "webhookId": "48c37988-ca07-4fd6-91d6-dd0a1d5ea89e",
+      "parameters": {
+        "options": {},
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "base"
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.5
+    },
+    {
+      "id": "cb0615e5-eab7-4c13-9aa0-fef333da887c",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        -304,
+        928
+      ],
+      "webhookId": "ea1a755b-cad0-4fa1-ad84-c74bf1873685",
+      "parameters": {
+        "options": {},
+        "formTitle": "nn"
+      },
+      "typeVersion": 2.5
+    },
+    {
+      "id": "ced85c56-4113-4ab4-b642-9d466c23178a",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        496,
+        928
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output;\nconst chunks = JSON.parse(raw);\n\nreturn chunks.map(chunk => ({ json: chunk }));"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "713a0c47-8123-4786-8bc9-91451afe9576",
+      "name": "Default Data Loader1",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "position": [
+        864,
+        1152
+      ],
+      "parameters": {
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "category",
+                "value": "={{ $json.category }}"
+              },
+              {
+                "name": "title",
+                "value": "={{ $json.title }}"
+              },
+              {
+                "name": "keywords",
+                "value": "={{ $json.keywords }}"
+              },
+              {
+                "name": "id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        },
+        "jsonData": "={{ $json.content }}",
+        "jsonMode": "expressionData"
+      },
+      "typeVersion": 1.1
+    },
+    {
+      "id": "83de0d08-d84a-4f26-9a6b-2759446eea9c",
+      "name": "Qdrant Vector Store2",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "position": [
+        832,
+        576
+      ],
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "topK": 3,
+        "options": {},
+        "toolDescription": "Search VPN support knowledge base. Use for setup instructions, troubleshooting, payment, FAQ. Input: user's question in Russian or English.",
+        "qdrantCollection": {
+          "__rl": true,
+          "mode": "list",
+          "value": "support_docs",
+          "cachedResultName": "support_docs"
+        }
+      },
+      "credentials": {
+        "qdrantApi": {
+          "id": "PROJECT · Qdrant",
+          "name": "PROJECT · Qdrant"
+        }
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "6d7325ee-80f4-4331-87a5-277b9334d989",
+      "name": "Embeddings OpenAI2",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        1040,
+        704
+      ],
+      "parameters": {
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "Shared · OpenAI",
+          "name": "Shared · OpenAI"
+        }
+      },
+      "typeVersion": 1.2
+    }
+  ],
+  "connections": {
+    "AI": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Redis": {
+      "main": [
+        [
+          {
+            "node": "Call 'output'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader1": {
+      "ai_document": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {}
+}

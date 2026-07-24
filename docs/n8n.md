@@ -1,58 +1,65 @@
 # Настройка n8n под этот стек
 
+## 0. OpenAI / Telegram из `.env`
+
+`OPENAI_API_KEY` и `TELEGRAM_USER_BOT_TOKEN` из `.env` попадают в n8n через `CREDENTIALS_OVERWRITE_DATA_FILE`.
+
+`./start.sh` вызывает `scripts/gen-n8n-credentials-overwrite.sh` и пишет `n8n/credentials-overwrite.json`.
+
+В UI один раз создай credentials с нужными именами. Поля apiKey / accessToken можно оставить пустыми: runtime возьмёт значения из overwrite.
+
 ## 1. Credentials
 
-Из контейнера n8n:
-
-| Имя | Тип | Host / URL |
+| Имя | Тип | Откуда секрет / host |
 |---|---|---|
-| Support Bot | Telegram | токен `TELEGRAM_USER_BOT_TOKEN` |
-| Support DB | Postgres | `postgres:5432`, db/user/pass из `.env` |
-| Support Redis | Redis | `redis:6379` |
-| Bedolaga DB | Postgres | `BEDOLAGA_DB_*` из `.env` |
-| Qdrant | Qdrant API | `http://qdrant:6333` |
-| OpenAI | OpenAI | свой ключ |
+| `Shared · OpenAI` | OpenAI | `OPENAI_API_KEY` (overwrite) |
+| `PROJECT · Support Bot` | Telegram | `TELEGRAM_USER_BOT_TOKEN` (overwrite) |
+| `PROJECT · Support DB` | Postgres | host=`postgres`, db/user/pass из `.env` |
+| `PROJECT · Support Redis` | Redis | host=`redis`, port=`6379` |
+| `PROJECT · Bedolaga DB` | Postgres | `BEDOLAGA_DB_*` из `.env` |
+| `PROJECT · Qdrant` | Qdrant API | `http://qdrant:6333` |
 
-## 2. Три воркфлоу (рекомендуемая схема)
+## 2. Env внутри workflow expressions
 
-Имена с префиксом проекта, если проектов несколько:
+В контейнер n8n прокинуты:
 
-1. `PROJECT · Support Main`
-   - Telegram Trigger (user bot)
-   - фильтр: игнор сообщений из `TELEGRAM_GROUP_ID`
-   - поиск/создание диалога в Support DB
-   - запись сообщения
-   - Redis LPUSH в `{REDIS_KEY_PREFIX}:incoming`
-   - если AI включён → Execute Workflow AI
-2. `PROJECT · Support AI`
-   - LLM + Qdrant
-   - ответ пользователю через Output
-   - Redis LPUSH `type=ai_response` в incoming (чтобы AI-ответ был виден в топике)
-3. `PROJECT · Support Output`
-   - отправка текста/фото/стикера user-боту
+- `TELEGRAM_GROUP_ID`
+- `REDIS_KEY_PREFIX`
+- `CABINET_URL`
+- `OPENAI_API_KEY`
+- `TELEGRAM_USER_BOT_TOKEN`
 
-Дополнительно в Main:
-- Redis Trigger на `{REDIS_KEY_PREFIX}:messages` → ответ менеджера пользователю
-- Redis Trigger на `{REDIS_KEY_PREFIX}:toggle_request` → flip `dialogs.ai_status` → LPUSH в `{REDIS_KEY_PREFIX}:toggle:{dialog_id}`
+Шаблоны воркфлоу читают group id, redis prefix и cabinet URL через `$env.*`. Sub-workflow ссылки — по имени воркфлоу.
 
-## 3. Карточка пользователя
+Webhook id Telegram Trigger зафиксирован:
 
-При создании нового диалога:
+`N8N_TELEGRAM_WEBHOOK_ID=a1b2c3d4-e5f6-7890-abcd-ef1234567890`
+
+После импорта:
+
+```bash
+./scripts/set-telegram-webhook.sh
+```
+
+## 3. Импорт
+
+- `n8n/workflows/support-output.json`
+- `n8n/workflows/support-ai.json`
+- `n8n/workflows/support-main.json`
+
+Порядок: Output → AI → Main.
+
+## 4. Карточка пользователя
+
+При новом диалоге:
 1. SELECT из `n8n_users` по `tg_id`
 2. SELECT из `n8n_keys` по `tg_id`
-3. Собрать текст карточки
-4. Кнопки:
-   - `callback_data=toggle_ai:{dialog_id}:{tg_id}`
-   - url=`{CABINET_URL}/admin/users/{id}`
-
-## 4. Webhook после рестарта n8n
-
-n8n иногда требует переустановки webhook. Храни `WEBHOOK_URL` и secret в `.env`/доке и переставляй webhook после рестарта, если Telegram начал отдавать 403/не доставляет апдейты.
+3. Кнопки toggle AI + url из `CABINET_URL`
 
 ## 5. Частые грабли
 
-- Один токен на user+group бота → сломанный webhook/polling
-- Group bot без Manage Topics → топики не создаются
-- Redis prefix в n8n и в `.env` различаются → тишина в группе
-- В HTTP Request захардкожен старый bot token → 401 на getFile
-- Bedolaga view не создан / UFW закрыт → карточка падает, первый ответ может не уйти
+- Пустой `OPENAI_API_KEY` / не пересобрали overwrite → AI падает
+- Не создан credential `Shared · OpenAI` (даже пустой) → нода без credential
+- Redis prefix в `.env` и в group-боте разные → тишина в группе
+- Не вызвали `set-telegram-webhook.sh` → Telegram не бьёт в n8n
+- Bedolaga view / UFW → карточка падает

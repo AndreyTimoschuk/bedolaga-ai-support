@@ -1,0 +1,2060 @@
+{
+  "name": "PROJECT · Support Main",
+  "nodes": [
+    {
+      "id": "4dbb2a2f-d7d1-46ec-814a-a21a931af78c",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "position": [
+        -32,
+        -112
+      ],
+      "webhookId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "PROJECT · Support Bot",
+          "name": "PROJECT · Support Bot"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "8fb5ab32-4032-451e-9de9-83f726521617",
+      "name": "Фильтр по id группы",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        192,
+        -112
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 3,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "343624b1-9a33-4990-b8c1-f30adbc729b5",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "leftValue": "={{ String($json.message.chat.id) }}",
+              "rightValue": "={{ String($env.TELEGRAM_GROUP_ID || '') }}"
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.3
+    },
+    {
+      "id": "5059e5f1-3822-490c-b799-cf418364f955",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        640,
+        -112
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 3,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "04428706-abb9-442f-96bf-7f66c0d8d4d8",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.id }}",
+              "rightValue": ""
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.3
+    },
+    {
+      "id": "62348053-e829-4016-9ddf-b4ef87c6691e",
+      "name": "Поиск диалогов пользователя",
+      "type": "n8n-nodes-base.postgres",
+      "onError": "continueRegularOutput",
+      "position": [
+        416,
+        -112
+      ],
+      "parameters": {
+        "sort": {
+          "values": [
+            {
+              "column": "id",
+              "direction": "DESC"
+            }
+          ]
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "dialogs",
+          "cachedResultName": "dialogs"
+        },
+        "where": {
+          "values": [
+            {
+              "value": "={{ $('Фильтр по id группы').item.json.message.from.id }}",
+              "column": "user_id"
+            },
+            {
+              "value": "active",
+              "column": "status"
+            }
+          ]
+        },
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "options": {
+          "outputColumns": [
+            "*"
+          ]
+        },
+        "operation": "select",
+        "returnAll": true
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PROJECT · Support DB",
+          "name": "PROJECT · Support DB"
+        }
+      },
+      "typeVersion": 2.6,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "93832c4d-5f66-43c9-83d1-1d516d812a25",
+      "name": "Добавить диалог",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        864,
+        -352
+      ],
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "dialogs",
+          "cachedResultName": "dialogs"
+        },
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "columns": {
+          "value": {
+            "status": "active",
+            "user_id": "={{ $('Фильтр по id группы').item.json.message.from.id }}",
+            "username": "={{ $('Фильтр по id группы').item.json.message.from.username }}",
+            "ai_status": true,
+            "created_at": "={{ $now }}"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "type": "number",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "id",
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "user_id",
+              "type": "number",
+              "display": true,
+              "required": false,
+              "displayName": "user_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "username",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "username",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ai_status",
+              "type": "boolean",
+              "display": true,
+              "required": false,
+              "displayName": "ai_status",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "type": "dateTime",
+              "display": true,
+              "required": false,
+              "displayName": "created_at",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "status",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PROJECT · Support DB",
+          "name": "PROJECT · Support DB"
+        }
+      },
+      "typeVersion": 2.6
+    },
+    {
+      "id": "951fa2f6-7c50-4bc4-a9c0-ea070bd41b5c",
+      "name": "Получить диалог",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        1088,
+        176
+      ],
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "dialogs",
+          "cachedResultName": "dialogs"
+        },
+        "where": {
+          "values": [
+            {
+              "value": "={{ $json.id }}",
+              "column": "id"
+            }
+          ]
+        },
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "options": {},
+        "operation": "select",
+        "returnAll": true
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PROJECT · Support DB",
+          "name": "PROJECT · Support DB"
+        }
+      },
+      "typeVersion": 2.6
+    },
+    {
+      "id": "9df3d355-05d9-4689-8d59-ad1795e14169",
+      "name": "Добавить сообщение в базу",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        1984,
+        208
+      ],
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "messages",
+          "cachedResultName": "messages"
+        },
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "columns": {
+          "value": {
+            "type": "user_message",
+            "file_id": "={{ $json.file_id }}",
+            "message": "={{ $json.message }}",
+            "user_id": "={{ $('Фильтр по id группы').item.json.message.from.id }}",
+            "dialog_id": "={{ $json.dialog_id }}",
+            "file_type": "={{ $json.file_type }}",
+            "created_at": "={{ $now }}"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "type": "number",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "id",
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "user_id",
+              "type": "number",
+              "display": true,
+              "required": false,
+              "displayName": "user_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dialog_id",
+              "type": "number",
+              "display": true,
+              "required": false,
+              "displayName": "dialog_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "message",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "type",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "type",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "type": "dateTime",
+              "display": true,
+              "required": false,
+              "displayName": "created_at",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "file_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file_type",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "file_type",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PROJECT · Support DB",
+          "name": "PROJECT · Support DB"
+        }
+      },
+      "typeVersion": 2.6
+    },
+    {
+      "id": "f2cbfff1-8d98-4e5b-8e5f-69ceb98c7ae8",
+      "name": "Если ИИ включена для чата",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        2208,
+        208
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 3,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "89266625-2240-4114-945b-df7495e86706",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $('Получить диалог').item.json.ai_status }}",
+              "rightValue": true
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.3
+    },
+    {
+      "id": "b91d2562-1b37-49b9-a7ce-040abb137d2a",
+      "name": "Execute Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        2432,
+        304
+      ],
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "PROJECT · Support AI",
+          "cachedResultName": "PROJECT · Support AI"
+        },
+        "workflowInputs": {
+          "value": {
+            "chat_id": "={{ $json.user_id }}",
+            "message": "={{ $('Добавить сообщение в базу').item.json.message }}",
+            "dialog_id": "={{ $json.dialog_id }}",
+            "ai_enabled": true
+          },
+          "schema": [
+            {
+              "id": "message",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "message",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dialog_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "dialog_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "chat_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "chat_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ai_enabled",
+              "type": "boolean",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "ai_enabled",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "str"
+          ],
+          "attemptToConvertTypes": true,
+          "convertFieldsToString": true
+        }
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "1303b2d4-3c3d-4d8e-9e09-a94bd6d9bebe",
+      "name": "Redis",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        2432,
+        112
+      ],
+      "parameters": {
+        "list": "={{ ($env.REDIS_KEY_PREFIX || 'support_bot') + ':incoming' }}",
+        "operation": "push",
+        "messageData": "={{ JSON.stringify({\n  \"type\": \"user_message\",\n  \"dialog_id\": $json.dialog_id,\n  \"chat_id\": $('Фильтр по id группы').item.json.message.chat.id.toString(),\n  \"message\": $json.message,\n  \"ai_enabled\": $('Получить диалог').item.json.ai_status,\n  \"file_id\": $json.file_id,\n  \"file_type\": $json.file_type\n}) }}"
+      },
+      "credentials": {
+        "redis": {
+          "id": "PROJECT · Support Redis",
+          "name": "PROJECT · Support Redis"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "229c7259-e07b-4f7a-8169-ee9e531a2df9",
+      "name": "Сообщение от менеджера",
+      "type": "n8n-nodes-base.redisTrigger",
+      "position": [
+        -32,
+        1008
+      ],
+      "parameters": {
+        "options": {},
+        "channels": "={{ ($env.REDIS_KEY_PREFIX || 'support_bot') + ':messages' }}"
+      },
+      "credentials": {
+        "redis": {
+          "id": "PROJECT · Support Redis",
+          "name": "PROJECT · Support Redis"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "68313094-732b-468f-ae5b-4cf670f2d0c8",
+      "name": "To JSON",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        192,
+        1008
+      ],
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  try {\n    // Парсим строку в объект\n    const parsed = JSON.parse(item.json.message);\n\n    // Записываем распарсенные данные в json\n    item.json.parsed = parsed;\n\n    // Можно сразу вытащить нужные поля\n    item.json.chat_id = parsed.chat_id;\n    item.json.text = parsed.message;\n    item.json.type = parsed.type;\n  } catch (error) {\n    item.json.error = 'Invalid JSON';\n  }\n}\n\nreturn $input.all();"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "885ab532-9a64-43b0-840c-f1cc814c3579",
+      "name": "Получить диалог по ID",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        416,
+        1008
+      ],
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "dialogs",
+          "cachedResultName": "dialogs"
+        },
+        "where": {
+          "values": [
+            {
+              "value": "={{ $json.parsed.dialog_id }}",
+              "column": "id"
+            }
+          ]
+        },
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "options": {},
+        "operation": "select",
+        "returnAll": true
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PROJECT · Support DB",
+          "name": "PROJECT · Support DB"
+        }
+      },
+      "typeVersion": 2.6
+    },
+    {
+      "id": "5121acd5-c1b8-4d35-a20a-4dfcaeb9f176",
+      "name": "Добавить в диалог сообщение",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        640,
+        1008
+      ],
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "messages",
+          "cachedResultName": "messages"
+        },
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "columns": {
+          "value": {
+            "type": "={{ $('To JSON').item.json.parsed.from }}",
+            "file_id": "={{ $('To JSON').item.json.parsed.file_id }}",
+            "message": "={{ $('To JSON').item.json.parsed.message }}",
+            "user_id": "={{ $json.user_id }}",
+            "dialog_id": "={{ $json.id }}",
+            "file_type": "={{ $('To JSON').item.json.parsed.file_type }}",
+            "created_at": "={{ $now }}"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "type": "number",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "id",
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "user_id",
+              "type": "number",
+              "display": true,
+              "required": false,
+              "displayName": "user_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dialog_id",
+              "type": "number",
+              "display": true,
+              "required": false,
+              "displayName": "dialog_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "message",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "type",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "type",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "type": "dateTime",
+              "display": true,
+              "required": false,
+              "displayName": "created_at",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "file_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file_type",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "file_type",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PROJECT · Support DB",
+          "name": "PROJECT · Support DB"
+        }
+      },
+      "typeVersion": 2.6
+    },
+    {
+      "id": "ab688ffb-dad6-47d2-84a6-0cfa2bd7a159",
+      "name": "отправка ответа пользователю",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        864,
+        1008
+      ],
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "PROJECT · Support Output",
+          "cachedResultName": "PROJECT · Support Output"
+        },
+        "workflowInputs": {
+          "value": {
+            "chat_id": "={{ $('To JSON').item.json.parsed.chat_id }}",
+            "file_id": "={{ $json.file_id }}",
+            "message": "={{ $('To JSON').item.json.parsed.message }}",
+            "file_type": "={{ $json.file_type }}"
+          },
+          "schema": [
+            {
+              "id": "chat_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "chat_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "message",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "file_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file_type",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "file_type",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": true,
+          "convertFieldsToString": true
+        }
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "b268d18d-dcf2-44dd-ae15-2582d45ca2e8",
+      "name": "Получить данные пользователя",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        1088,
+        -400
+      ],
+      "parameters": {
+        "limit": 1,
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "n8n_users",
+          "cachedResultName": "n8n_users"
+        },
+        "where": {
+          "values": [
+            {
+              "value": "={{ $json.user_id }}",
+              "column": "tg_id"
+            }
+          ]
+        },
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public",
+          "cachedResultName": "public"
+        },
+        "options": {},
+        "operation": "select"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PROJECT · Bedolaga DB",
+          "name": "PROJECT · Bedolaga DB"
+        }
+      },
+      "typeVersion": 2.6,
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "d8f723c5-d713-428f-9d37-dad4ea97eb12",
+      "name": "Получить данные о ключах пользователя",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        1312,
+        -400
+      ],
+      "parameters": {
+        "limit": 1,
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "n8n_keys",
+          "cachedResultName": "n8n_keys"
+        },
+        "where": {
+          "values": [
+            {
+              "value": "={{ $json.tg_id }}",
+              "column": "tg_id"
+            }
+          ]
+        },
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public",
+          "cachedResultName": "public"
+        },
+        "options": {},
+        "operation": "select"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PROJECT · Bedolaga DB",
+          "name": "PROJECT · Bedolaga DB"
+        }
+      },
+      "typeVersion": 2.6,
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "b4502d71-b6a4-4b12-a2c3-a018088b9f1c",
+      "name": "Парсинг ключей",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1536,
+        -400
+      ],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst user = $('Получить данные пользователя').item.json;\n\nfunction fmtDate(v) {\n  if (v === null || v === undefined || v === '') return '—';\n  let raw = v;\n  if (typeof v === 'string' && /^\\d+$/.test(v.trim())) {\n    raw = Number(v.trim());\n  }\n  const d = new Date(raw);\n  if (Number.isNaN(d.getTime())) return String(v);\n  return d.toLocaleString('ru-RU', {\n    day: '2-digit', month: '2-digit', year: 'numeric',\n    hour: '2-digit', minute: '2-digit'\n  });\n}\n\nfunction yn(v) {\n  if (v === true || v === 'true' || v === 't' || v === 1) return 'да';\n  if (v === false || v === 'false' || v === 'f' || v === 0) return 'нет';\n  return v === null || v === undefined || v === '' ? '—' : String(v);\n}\n\nfunction money(v) {\n  if (v === null || v === undefined || v === '') return '—';\n  return String(v) + ' ₽';\n}\n\nconst username = user.username ? '@' + String(user.username).replace(/^@/, '') : '—';\nconst fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || '—';\nconst referrer = user.referrer_username\n  ? '@' + String(user.referrer_username).replace(/^@/, '')\n  : (user.referrer_tg_id || '—');\n\nlet restrictions = 'нет';\nif (user.restriction_topup || user.restriction_subscription) {\n  const parts = [];\n  if (user.restriction_topup) parts.push('пополнение');\n  if (user.restriction_subscription) parts.push('подписка');\n  restrictions = parts.join(', ');\n  if (user.restriction_reason) restrictions += ' (' + user.restriction_reason + ')';\n}\n\nlet keysText = '';\nconst count = items.length;\nif (count === 0) {\n  keysText = '❌ Подписки отсутствуют';\n} else {\n  keysText = '🔑 Подписки (' + count + '):\\n';\n  items.forEach((item, index) => {\n    const k = item.json;\n    const trafficLimit = (k.traffic_limit_gb === 0 || k.traffic_limit_gb === '0')\n      ? 'безлимит'\n      : ((k.traffic_limit_gb ?? '—') + ' ГБ');\n    keysText += '\\n' + (index + 1) + '. ' + (k.email || '—') + '\\n';\n    keysText += '   Тариф: ' + (k.server_id || '—') + '\\n';\n    keysText += '   Статус: ' + (k.status || '—') + ' | Триал: ' + yn(k.is_trial) + '\\n';\n    keysText += '   Старт: ' + fmtDate(k.start_date) + '\\n';\n    keysText += '   До: ' + fmtDate(k.end_date || k.expiry_time) + '\\n';\n    keysText += '   Устройства: ' + (k.device_limit ?? '—') + '\\n';\n    keysText += '   Трафик: ' + (k.traffic_used_gb ?? 0) + ' / ' + trafficLimit + '\\n';\n    keysText += '   Автооплата: ' + yn(k.autopay_enabled);\n    if (k.autopay_enabled) keysText += ' (за ' + (k.autopay_days_before ?? '—') + ' дн.)';\n    keysText += '\\n';\n    if (k.is_daily_paused) keysText += '   Daily pause: да\\n';\n    if (k.modem_enabled) keysText += '   Modem: да\\n';\n  });\n}\n\nconst lines = [\n  '🆔 Telegram ID: ' + (user.tg_id ?? '—'),\n  '👤 Username: ' + username,\n  '📛 Имя: ' + fullName,\n  '📌 Статус: ' + (user.status ?? '—'),\n  '🌐 Язык: ' + (user.language ?? '—') + ' | Auth: ' + (user.auth_type ?? '—'),\n  '✉️ Email: ' + (user.email || '—') + ' (verified: ' + yn(user.email_verified) + ')',\n  '💰 Баланс: ' + money(user.balance),\n  '🎯 Триал: ' + yn(user.trial) + ' | Была оплата: ' + yn(user.had_paid) + ' | Первый top-up: ' + yn(user.first_topup),\n  '🏷 Промогруппа: ' + (user.promo_group || '—') + ' | Промокодов: ' + (user.used_promocodes ?? 0),\n  '🤝 Партнёр: ' + (user.partner_status || '—'),\n  '🔗 Реф.код: ' + (user.referral_code || '—') + ' | Реферер: ' + referrer + ' | Рефералов: ' + (user.referrals_count ?? 0),\n  '💳 Депозиты: ' + money(user.total_deposits),\n  '💳 Последний депозит: ' + money(user.last_deposit_amount) + ' | ' + fmtDate(user.last_deposit_at) + ' | ' + (user.last_deposit_method || '—'),\n  '🧾 Последняя операция: ' + (user.last_tx_type || '—') + ' | ' + money(user.last_tx_amount) + ' | ' + fmtDate(user.last_tx_at),\n  '🎟 Тикеты: открытых ' + (user.open_tickets ?? 0) + ' / всего ' + (user.tickets_total ?? 0),\n  '🚫 Ограничения: ' + restrictions,\n  '📊 Lifetime трафик: ' + (user.lifetime_traffic_gb ?? 0) + ' ГБ',\n  '📅 Регистрация: ' + fmtDate(user.created_at),\n  '🕐 Активность: ' + fmtDate(user.last_activity),\n  '🖥 Вход в кабинет: ' + fmtDate(user.cabinet_last_login),\n  '🧬 Remnawave UUID: ' + (user.remnawave_uuid || '—'),\n  '',\n  keysText.trim()\n];\n\nreturn [{\n  json: {\n    message: lines.join('\\n'),\n    keys_text: keysText,\n    keys_count: count\n  }\n}];\n"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "a7f83412-0190-40fe-b44e-fe134062c5ab",
+      "name": "Итоговое сообщение",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1760,
+        -400
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "72760b91-6217-4ff7-9728-e7ac368b197e",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "9a00ff38-7e63-4503-8108-f96f1794dfd3",
+      "name": "Redis1",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        1984,
+        -400
+      ],
+      "parameters": {
+        "list": "={{ ($env.REDIS_KEY_PREFIX || 'support_bot') + ':incoming' }}",
+        "operation": "push",
+        "messageData": "={{ (() => {\n  const dialog = $('Добавить диалог').item.json;\n  const user = $('Получить данные пользователя').item.json;\n  const buttons = [\n    [{ text: '🔄 Переключить AI', callback_data: 'toggle_ai:' + dialog.id + ':' + dialog.user_id }],\n  ];\n  if (user.id) {\n    buttons.push([{ text: 'Карточка пользователя', url: (($env.CABINET_URL || 'https://cab.example.com').replace(/\\/+$/,'')) + '/admin/users/' + user.id }]);\n  }\n  return JSON.stringify({\n    type: 'user_message',\n    dialog_id: dialog.id,\n    chat_id: dialog.user_id,\n    message: $json.message,\n    ai_enabled: dialog.ai_status,\n    buttons\n  });\n})() }}"
+      },
+      "credentials": {
+        "redis": {
+          "id": "PROJECT · Support Redis",
+          "name": "PROJECT · Support Redis"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "44458e00-8dbd-47e2-959a-b7f010d08ee4",
+      "name": "Переключение ИИ",
+      "type": "n8n-nodes-base.redisTrigger",
+      "position": [
+        -32,
+        1232
+      ],
+      "parameters": {
+        "options": {},
+        "channels": "={{ ($env.REDIS_KEY_PREFIX || 'support_bot') + ':toggle_request' }}"
+      },
+      "credentials": {
+        "redis": {
+          "id": "PROJECT · Support Redis",
+          "name": "PROJECT · Support Redis"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "e2dc11a3-9422-424c-b272-54cb67c96327",
+      "name": "Redis2",
+      "type": "n8n-nodes-base.redis",
+      "position": [
+        864,
+        1232
+      ],
+      "parameters": {
+        "list": "={{ ($env.REDIS_KEY_PREFIX || 'support_bot') + ':toggle:' + $json.id }}",
+        "operation": "push",
+        "messageData": "={ \"ai_enabled\": {{ $json.ai_status }} }"
+      },
+      "credentials": {
+        "redis": {
+          "id": "PROJECT · Support Redis",
+          "name": "PROJECT · Support Redis"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "2a330e60-c3ec-4ca3-a99f-cce29d00129e",
+      "name": "To JSON1",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        192,
+        1232
+      ],
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  try {\n    // Парсим строку в объект\n    const parsed = JSON.parse(item.json.message);\n\n    // Записываем распарсенные данные в json\n    item.json.parsed = parsed;\n\n    // Можно сразу вытащить нужные поля\n    item.json.chat_id = parsed.chat_id;\n    item.json.text = parsed.message;\n    item.json.type = parsed.type;\n  } catch (error) {\n    item.json.error = 'Invalid JSON';\n  }\n}\n\nreturn $input.all();"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "7600f2bb-1542-48e9-8bfe-690921d3e678",
+      "name": "Получить диалог по ID1",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        416,
+        1232
+      ],
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "dialogs",
+          "cachedResultName": "dialogs"
+        },
+        "where": {
+          "values": [
+            {
+              "value": "={{ $json.parsed.dialog_id }}",
+              "column": "id"
+            }
+          ]
+        },
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "options": {},
+        "operation": "select",
+        "returnAll": true
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PROJECT · Support DB",
+          "name": "PROJECT · Support DB"
+        }
+      },
+      "typeVersion": 2.6
+    },
+    {
+      "id": "0f373cea-a2f7-436a-a786-1b997ac5317a",
+      "name": "Получить диалог по ID2",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        640,
+        1232
+      ],
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "dialogs",
+          "cachedResultName": "dialogs"
+        },
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "columns": {
+          "value": {
+            "id": "={{ $json.id }}",
+            "ai_status": "={{ !$json.ai_status }}"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "type": "number",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "id",
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "user_id",
+              "type": "number",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "user_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "username",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "username",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ai_status",
+              "type": "boolean",
+              "display": true,
+              "required": false,
+              "displayName": "ai_status",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "type": "dateTime",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "created_at",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "status",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {},
+        "operation": "update"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PROJECT · Support DB",
+          "name": "PROJECT · Support DB"
+        }
+      },
+      "typeVersion": 2.6
+    },
+    {
+      "id": "f2a59898-9f1e-44aa-baec-799ffb0341ea",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        1312,
+        128
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "outputKey": "sticker",
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "8f761088-9ab4-4260-bed2-e89186c1d07b",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $('Фильтр по id группы').item.json.message.sticker }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "photo",
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "5ef13e73-450a-4c69-8bfc-5a05397a605d",
+                    "operator": {
+                      "type": "array",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $('Фильтр по id группы').item.json.message.photo }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "voice",
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "2eea8441-e9e4-489d-85ee-4842f61a85b2",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $('Фильтр по id группы').item.json.message.voice }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "video",
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "0b4d0d9e-5894-4d75-9b65-25acf473fdba",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $('Фильтр по id группы').item.json.message.video }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "text",
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "8cc35b9b-f0df-4851-a7d0-9aa0d4490205",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "95ba5d86-2768-457e-88c8-0a670a63cd4d",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1760,
+        -208
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "484656b9-2200-417f-a10d-5aec5a18168f",
+              "name": "message",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "id": "79de50d1-902e-4f61-880d-cb735dd83cdf",
+              "name": "file_id",
+              "type": "string",
+              "value": "={{ $('Фильтр по id группы').item.json.message.sticker.file_id }}"
+            },
+            {
+              "id": "0eeb5121-c3a3-4120-bed0-a882ae9ef32d",
+              "name": "dialog_id",
+              "type": "string",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "id": "e2ed7b8b-21e7-4081-af0b-feec20eb3b8b",
+              "name": "file_type",
+              "type": "string",
+              "value": "sticker"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "9b59008b-b7f1-47bf-91b8-cb001f463a74",
+      "name": "Edit Fields1",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1760,
+        -16
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "484656b9-2200-417f-a10d-5aec5a18168f",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $('Фильтр по id группы').item.json.message.caption }}"
+            },
+            {
+              "id": "20eaa7bd-6977-4bed-a2ed-606f3b2edafd",
+              "name": "file_id",
+              "type": "string",
+              "value": "=https://api.telegram.org/file/botUSER_BOT_TOKEN/{{ $json.result.file_path }}"
+            },
+            {
+              "id": "22c6497e-f103-4e71-83b3-0023ae6dfae2",
+              "name": "dialog_id",
+              "type": "string",
+              "value": "={{ $('Switch').item.json.id }}"
+            },
+            {
+              "id": "e86e8b7b-110f-4431-801e-e3cb30efe38c",
+              "name": "file_type",
+              "type": "string",
+              "value": "photo"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "227faccf-f53b-42a8-b7ee-878fd3bd292c",
+      "name": "Edit Fields2",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1760,
+        176
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "484656b9-2200-417f-a10d-5aec5a18168f",
+              "name": "message",
+              "type": "string",
+              "value": "="
+            },
+            {
+              "id": "20eaa7bd-6977-4bed-a2ed-606f3b2edafd",
+              "name": "file_id",
+              "type": "string",
+              "value": "=https://api.telegram.org/file/botUSER_BOT_TOKEN/{{ $json.result.file_path }}"
+            },
+            {
+              "id": "22c6497e-f103-4e71-83b3-0023ae6dfae2",
+              "name": "dialog_id",
+              "type": "string",
+              "value": "={{ $('Switch').item.json.id }}"
+            },
+            {
+              "id": "1c621010-38bf-4b9e-a49d-9498242dccee",
+              "name": "file_type",
+              "type": "string",
+              "value": "voice"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "ac88ecc9-a747-4dae-bfa3-608e1a52cccf",
+      "name": "Execute a SQL query",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        -32,
+        784
+      ],
+      "parameters": {
+        "query": "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'dialogs';\nSELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'messages';\nSELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'chat_topics';",
+        "options": {},
+        "operation": "executeQuery"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "PROJECT · Support DB",
+          "name": "PROJECT · Support DB"
+        }
+      },
+      "typeVersion": 2.6
+    },
+    {
+      "id": "599b293f-f3c2-4d44-a5c1-47b3910cb028",
+      "name": "Edit Fields3",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1760,
+        560
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "484656b9-2200-417f-a10d-5aec5a18168f",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $('Фильтр по id группы').item.json.message.text }}"
+            },
+            {
+              "id": "20eaa7bd-6977-4bed-a2ed-606f3b2edafd",
+              "name": "file_id",
+              "type": "string",
+              "value": "="
+            },
+            {
+              "id": "22c6497e-f103-4e71-83b3-0023ae6dfae2",
+              "name": "dialog_id",
+              "type": "string",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "id": "1c621010-38bf-4b9e-a49d-9498242dccee",
+              "name": "file_type",
+              "type": "string",
+              "value": "text"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "2193ddfb-46dd-48b6-959e-47b74de841ac",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1536,
+        -16
+      ],
+      "parameters": {
+        "url": "=https://api.telegram.org/botUSER_BOT_TOKEN/getFile?file_id={{ $('Фильтр по id группы').item.json.message.photo.at(-1).file_id }}",
+        "options": {}
+      },
+      "typeVersion": 4.4
+    },
+    {
+      "id": "30a47c9a-5ec5-437d-acca-f83053d1f7e4",
+      "name": "HTTP Request1",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1536,
+        176
+      ],
+      "parameters": {
+        "url": "=https://api.telegram.org/botUSER_BOT_TOKEN/getFile?file_id={{ $('Фильтр по id группы').item.json.message.voice.file_id }}",
+        "options": {}
+      },
+      "typeVersion": 4.4
+    },
+    {
+      "id": "10a59573-ea2d-42f0-aca1-a2f33592dc1f",
+      "name": "Edit Fields4",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1760,
+        368
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "484656b9-2200-417f-a10d-5aec5a18168f",
+              "name": "message",
+              "type": "string",
+              "value": "="
+            },
+            {
+              "id": "20eaa7bd-6977-4bed-a2ed-606f3b2edafd",
+              "name": "file_id",
+              "type": "string",
+              "value": "=https://api.telegram.org/file/botUSER_BOT_TOKEN/{{ $json.result.file_path }}"
+            },
+            {
+              "id": "22c6497e-f103-4e71-83b3-0023ae6dfae2",
+              "name": "dialog_id",
+              "type": "string",
+              "value": "={{ $('Switch').item.json.id }}"
+            },
+            {
+              "id": "1c621010-38bf-4b9e-a49d-9498242dccee",
+              "name": "file_type",
+              "type": "string",
+              "value": "video"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "6a840875-6af1-4e6b-9890-fc3c3d1a2bbe",
+      "name": "HTTP Request2",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1536,
+        368
+      ],
+      "parameters": {
+        "url": "=https://api.telegram.org/botUSER_BOT_TOKEN/getFile?file_id={{ $('Фильтр по id группы').item.json.message.video.file_id }}",
+        "options": {}
+      },
+      "typeVersion": 4.4
+    },
+    {
+      "id": "0c638a6d-7b61-4619-aaa4-edd88cd1ff65",
+      "name": "If /start",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        412,
+        -292
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 3,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "712276b9-8b39-48c6-8e52-f16b2c8ccfd5",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              },
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/start"
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.3
+    },
+    {
+      "id": "39efdc77-30f0-402b-ad75-1bc964ee8e0e",
+      "name": "Reaction /start",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        632,
+        -292
+      ],
+      "parameters": {
+        "url": "=https://api.telegram.org/botUSER_BOT_TOKEN/setMessageReaction",
+        "method": "POST",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "jsonBody": "={{ JSON.stringify({ chat_id: $json.message.chat.id, message_id: $json.message.message_id, reaction: [{ type: 'emoji', emoji: '👋' }] }) }}",
+        "sendBody": true,
+        "specifyBody": "json"
+      },
+      "typeVersion": 4.4
+    },
+    {
+      "id": "e2e-webhook-node-0001",
+      "name": "E2E Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        -32,
+        200
+      ],
+      "webhookId": "e2e00000-0000-4000-8000-000000000001",
+      "parameters": {
+        "path": "e2e-ingress",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "typeVersion": 2
+    }
+  ],
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Получить диалог",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Добавить диалог",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To JSON": {
+      "main": [
+        [
+          {
+            "node": "Получить диалог по ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To JSON1": {
+      "main": [
+        [
+          {
+            "node": "Получить диалог по ID1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If /start": {
+      "main": [
+        [
+          {
+            "node": "Reaction /start",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Добавить сообщение в базу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Добавить сообщение в базу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Добавить сообщение в базу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Добавить сообщение в базу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields4": {
+      "main": [
+        [
+          {
+            "node": "Добавить сообщение в базу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Фильтр по id группы",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Парсинг ключей": {
+      "main": [
+        [
+          {
+            "node": "Итоговое сообщение",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Добавить диалог": {
+      "main": [
+        [
+          {
+            "node": "Получить диалог",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Получить данные пользователя",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Переключение ИИ": {
+      "main": [
+        [
+          {
+            "node": "To JSON1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получить диалог": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Фильтр по id группы": {
+      "main": [
+        [
+          {
+            "node": "Поиск диалогов пользователя",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If /start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Итоговое сообщение": {
+      "main": [
+        [
+          {
+            "node": "Redis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получить диалог по ID": {
+      "main": [
+        [
+          {
+            "node": "Добавить в диалог сообщение",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получить диалог по ID1": {
+      "main": [
+        [
+          {
+            "node": "Получить диалог по ID2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получить диалог по ID2": {
+      "main": [
+        [
+          {
+            "node": "Redis2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сообщение от менеджера": {
+      "main": [
+        [
+          {
+            "node": "To JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Если ИИ включена для чата": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Добавить сообщение в базу": {
+      "main": [
+        [
+          {
+            "node": "Если ИИ включена для чата",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Добавить в диалог сообщение": {
+      "main": [
+        [
+          {
+            "node": "отправка ответа пользователю",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Поиск диалогов пользователя": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получить данные пользователя": {
+      "main": [
+        [
+          {
+            "node": "Получить данные о ключах пользователя",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "отправка ответа пользователю": {
+      "main": [
+        []
+      ]
+    },
+    "Получить данные о ключах пользователя": {
+      "main": [
+        [
+          {
+            "node": "Парсинг ключей",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E2E Webhook": {
+      "main": [
+        [
+          {
+            "node": "Фильтр по id группы",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {}
+}

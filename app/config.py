@@ -52,9 +52,16 @@ class Settings(BaseSettings):
     N8N_PROTOCOL: str = "http"
     WEBHOOK_URL: str = "http://localhost:5678/"
 
+    # When true, successful sends are mirrored to Redis test outbox for e2e asserts
+    TEST_MODE: bool = False
+
     @property
     def redis_incoming_list(self) -> str:
         return f"{self.REDIS_KEY_PREFIX}:incoming"
+
+    @property
+    def redis_test_outbox_list(self) -> str:
+        return f"{self.REDIS_KEY_PREFIX}:test:outbox"
 
     @property
     def redis_messages_channel(self) -> str:

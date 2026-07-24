@@ -1,0 +1,94 @@
+# Overlay for e2e / contract tests. Use with:
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d
+
+services:
+  telegram-bot:
+    container_name: support-e2e-telegram-bot
+    env_file:
+      - .env.test
+    environment:
+      TEST_MODE: "true"
+      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-support_bot_test}
+      REDIS_URL: redis://redis:6379
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+
+  redis:
+    container_name: support-e2e-redis
+    ports:
+      - "${TEST_REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis_e2e_data:/data
+
+  postgres:
+    container_name: support-e2e-postgres
+    ports:
+      - "${TEST_POSTGRES_PORT:-5433}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-supportbot}
+      POSTGRES_USER: ${POSTGRES_USER:-supportbot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.test}
+    volumes:
+      - postgres_e2e_data:/var/lib/postgresql/data
+      - ./scripts/init-support-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+
+  qdrant:
+    container_name: support-e2e-qdrant
+    volumes:
+      - qdrant_e2e_data:/qdrant/storage
+
+  n8n:
+    container_name: support-e2e-n8n
+    ports:
+      - "${N8N_PORT:-5679}:5678"
+    environment:
+      TEST_MODE: "true"
+      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-support_bot_test}
+      TELEGRAM_GROUP_ID: ${TELEGRAM_GROUP_ID:-}
+      CABINET_URL: ${CABINET_URL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      TELEGRAM_USER_BOT_TOKEN: ${TELEGRAM_USER_BOT_TOKEN:-}
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:5679/}
+      N8N_EDITOR_BASE_URL: ${N8N_EDITOR_BASE_URL:-http://localhost:5679/}
+      N8N_SECURE_COOKIE: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-support-e2e-encryption-key-32b}
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+    volumes:
+      - n8n_e2e_data:/home/node/.n8n
+      - ./n8n/workflows:/import/workflows:ro
+      - ./n8n/credentials-overwrite.json:/credentials-overwrite.json:ro
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: support-e2e-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://n8n:5678
+    depends_on:
+      - n8n
+    networks:
+      - support
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  photo-fixture:
+    image: python:3.11-slim
+    container_name: support-e2e-photo-fixture
+    working_dir: /www
+    command: ["python", "-m", "http.server", "8080"]
+    volumes:
+      - ./tests/fixtures:/www:ro
+    networks:
+      - support
+
+volumes:
+  redis_e2e_data:
+  postgres_e2e_data:
+  qdrant_e2e_data:
+  n8n_e2e_data:

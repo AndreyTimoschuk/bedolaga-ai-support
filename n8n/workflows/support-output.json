@@ -1,0 +1,409 @@
+{
+  "name": "PROJECT · Support Output",
+  "nodes": [
+    {
+      "id": "c055762a-8fe7-4141-a639-df2372f30060",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        272,
+        352
+      ],
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "chat_id"
+            },
+            {
+              "name": "message"
+            },
+            {
+              "name": "file_id"
+            },
+            {
+              "name": "file_type"
+            }
+          ]
+        }
+      },
+      "typeVersion": 1.1
+    },
+    {
+      "id": "7972a84d-a812-41d2-944f-c6f6c62eb2a3",
+      "name": "Send a text message",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        704,
+        656
+      ],
+      "webhookId": "a0b4010b-a5cb-47e6-b9d7-b4fb03baf61c",
+      "parameters": {
+        "text": "={{ $json.message }}",
+        "chatId": "={{ $json.chat_id }}",
+        "additionalFields": {
+          "parse_mode": "HTML",
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "PROJECT · Support Bot",
+          "name": "PROJECT · Support Bot"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "006f0358-3de6-4a7a-8064-4f600b767394",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        480,
+        352
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "outputKey": "photo",
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "df68ff36-5258-4fdc-a2b7-0091e7170686",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.file_type }}",
+                    "rightValue": "photo"
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "sticker",
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "dd17f940-3634-4b51-9acb-d683c2149b5c",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.file_type }}",
+                    "rightValue": "sticker"
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "voice",
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "22e9adc7-9867-439b-bdda-a3691f1d1c8a",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.file_type }}",
+                    "rightValue": "voice"
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "e59f4e1b-c979-496e-a0d9-d3906e727248",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "",
+                    "rightValue": ""
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "d7150337-2f67-421c-b0c9-1b4eee1aea53",
+      "name": "Send a photo message",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        1136,
+        304
+      ],
+      "webhookId": "f4778edc-44e7-461b-91ef-f5abdb3887fe",
+      "parameters": {
+        "chatId": "={{ $('When Executed by Another Workflow').item.json.chat_id }}",
+        "operation": "sendPhoto",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "={{ $('When Executed by Another Workflow').item.json.message }}"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "PROJECT · Support Bot",
+          "name": "PROJECT · Support Bot"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "695fa7fe-290a-44cf-b786-a65145532c9b",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        688,
+        176
+      ],
+      "parameters": {
+        "url": "=https://api.telegram.org/botUSER_BOT_TOKEN/getFile?file_id={{ $json.file_id }}",
+        "options": {}
+      },
+      "typeVersion": 4.4
+    },
+    {
+      "id": "824709c7-1a6b-4de6-8b4e-ff9f857b1dd1",
+      "name": "HTTP Request1",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        896,
+        176
+      ],
+      "parameters": {
+        "url": "=https://api.telegram.org/file/botUSER_BOT_TOKEN/{{ $json.result.file_path }}",
+        "options": {}
+      },
+      "typeVersion": 4.4
+    },
+    {
+      "id": "83fedc72-8a5f-4d21-8cb4-241d678fc4a0",
+      "name": "Send a sticker",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        816,
+        352
+      ],
+      "webhookId": "cc75fe7a-dabb-4682-a61f-babd3d1c6001",
+      "parameters": {
+        "file": "={{ $('When Executed by Another Workflow').item.json.file_id }}",
+        "chatId": "={{ $('When Executed by Another Workflow').item.json.chat_id }}",
+        "operation": "sendSticker",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "PROJECT · Support Bot",
+          "name": "PROJECT · Support Bot"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "3bb78427-6cf1-4a53-a406-a701c5ae8f36",
+      "name": "HTTP Request2",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        896,
+        544
+      ],
+      "parameters": {
+        "url": "=https://api.telegram.org/botUSER_BOT_TOKEN/getFile?file_id={{ $json.file_id }}",
+        "options": {}
+      },
+      "typeVersion": 4.4
+    },
+    {
+      "id": "8b9134d9-4f22-467d-895f-dcc65ef80d63",
+      "name": "HTTP Request3",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1104,
+        544
+      ],
+      "parameters": {
+        "url": "=https://api.telegram.org/file/botUSER_BOT_TOKEN/{{ $json.result.file_path }}",
+        "options": {}
+      },
+      "typeVersion": 4.4
+    },
+    {
+      "id": "fc2a67ea-b705-45f9-af1a-85b145efbfa0",
+      "name": "HTTP Request4",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1328,
+        544
+      ],
+      "parameters": {
+        "url": "https://api.telegram.org/botUSER_BOT_TOKEN/sendVoice",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('When Executed by Another Workflow').item.json.chat_id }}"
+            },
+            {
+              "name": "voice",
+              "parameterType": "formBinaryData",
+              "inputDataFieldName": "data"
+            }
+          ]
+        }
+      },
+      "typeVersion": 4.4
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a sticker",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a photo message": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Send a photo message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {}
+}
